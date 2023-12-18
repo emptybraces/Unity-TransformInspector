@@ -1,0 +1,9 @@
+{
+    "name": "com.emptybraces.transform_inspector",
+    "displayName": "Transform Inspector",
+    "author": "emptybraces",
+    "version": "1.0.0",
+    "unity": "2022.3",
+    "description": "Expands Transform Inspector.",
+    "dependencies": {}
+}
