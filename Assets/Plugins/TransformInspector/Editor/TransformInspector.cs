@@ -12,7 +12,6 @@ namespace Emptybraces.Editor
 
 		public override void OnInspectorGUI()
 		{
-			base.OnInspectorGUI();
 			_originalEditor.OnInspectorGUI();
 
 			serializedObject.Update();
@@ -75,8 +74,8 @@ namespace Emptybraces.Editor
 		}
 		protected override void _AddCustomAction()
 		{
+			// 選択しているオブジェクトを接地
 			_customActions.Add(
-				// 選択しているオブジェクトを接地
 				("Shift to ground", new System.Action(() =>
 				{
 					Undo.RecordObjects(_targets.ToArray(), "Shift to ground");
@@ -85,6 +84,7 @@ namespace Emptybraces.Editor
 							child.position = hit.point;
 				}))
 			);
+			// トルネード上に配置
 			_customActions.Add(
 				("Positioning/FibonacciSphere", new System.Action(() =>
 				{
