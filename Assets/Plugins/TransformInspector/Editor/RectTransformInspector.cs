@@ -1,26 +1,33 @@
 ﻿using UnityEngine;
 using UnityEditor;
-using System.Linq;
+using System.Reflection;
 
 namespace Emptybraces.Editor
 {
-	[CanEditMultipleObjects, CustomEditor(typeof(Transform))]
-	public class TransformInspector : TransformInspectorBase<Transform>
+	[CanEditMultipleObjects, CustomEditor(typeof(RectTransform))]
+	public class RectTransformInspector : TransformInspectorBase<RectTransform>
 	{
-		protected override string TypeName => "UnityEditor.TransformInspector, UnityEditor";
+		protected override string TypeName => "UnityEditor.RectTransformEditor, UnityEditor";
 		protected static bool _isShow;
-
+		MethodInfo _onSceneGUI, _onValidate;
+		protected override void OnEnable()
+		{
+			base.OnEnable();
+			_onSceneGUI = _originalEditorType.GetMethod("OnSceneGUI", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+			_onValidate = _originalEditorType.GetMethod("OnValidate", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+		}
+		void OnValidate() => _onValidate?.Invoke(_originalEditor, null);
+		void OnSceneGUI() => _onSceneGUI?.Invoke(_originalEditor, null);
 		public override void OnInspectorGUI()
 		{
-			base.OnInspectorGUI();
 			_originalEditor.OnInspectorGUI();
 
 			serializedObject.Update();
 
-			_target = (Transform)target;
+			_target = (RectTransform)target;
 			_targets.Clear();
 			for (int i = 0; i < targets.Length; ++i)
-				_targets.Add((Transform)targets[i]);
+				_targets.Add((RectTransform)targets[i]);
 			for (int i = 0; i < 3; ++i)
 				_mixed[i] = false;
 
@@ -75,45 +82,6 @@ namespace Emptybraces.Editor
 		}
 		protected override void _AddCustomAction()
 		{
-			_customActions.Add(
-				// 選択しているオブジェクトを接地
-				("Shift to ground", new System.Action(() =>
-				{
-					Undo.RecordObjects(_targets.ToArray(), "Shift to ground");
-					foreach (var child in _targets)
-						if (Physics.Raycast(child.position, Vector3.down, out var hit))
-							child.position = hit.point;
-				}))
-			);
-			_customActions.Add(
-				("Positioning/FibonacciSphere", new System.Action(() =>
-				{
-					Undo.RecordObjects(_targets.ToArray(), "Positioning FibonacciSphere");
-					var cp = _GetCenterPosition(_targets);
-					var max_distance = _targets.Aggregate(0f, (a, e) => { var d = Vector3.Distance(e.position, cp); return a < d ? d : a; });
-					var fib = _GetFibonacciSphere(_targets.Count);
-					for (int i = 0; i < _targets.Count; ++i)
-						_targets[i].position = cp + fib[i] * max_distance;
-					Vector3[] _GetFibonacciSphere(int samples)
-					{
-						var rnd = 1;
-						var points = new Vector3[samples];
-						var offset = 2f / samples;
-						var increment = Mathf.PI * (3f - Mathf.Sqrt(5f));
-						for (int i = 0; i < samples; ++i)
-						{
-							var y = ((i * offset) - 1) + (offset / 2);
-							var r = Mathf.Sqrt(1 - Mathf.Pow(y, 2));
-							var phi = ((i + rnd) % samples) * increment;
-							points[i].x = Mathf.Cos(phi) * r;
-							points[i].y = y;
-							points[i].z = Mathf.Sin(phi) * r;
-						}
-						return points;
-					}
-				}))
-			);
 		}
 	}
 }
-
