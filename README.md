@@ -24,3 +24,6 @@ Sample actions below are implemented:
 - Aligns the parent position with selected child transform without affecting the other children.
 - Randomize position(0-current), rotation(0-360), scale((0-current).
 - Grounding.
+
+![a](https://github.com/emptybraces/Unity_TransformInspector/assets/1441835/1addc94a-1c32-4500-b407-7e53563f5d53)
+![b](https://github.com/emptybraces/Unity_TransformInspector/assets/1441835/6fb9c531-e8e4-446a-9cbf-332299d31569)
