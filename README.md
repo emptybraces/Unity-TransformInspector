@@ -1,7 +1,8 @@
 # Unity_TransformInspector
 More things you can do with Transform Inspector.
 
-![image](https://github.com/emptybraces/Unity_TransformInspector/assets/1441835/27d2c147-6e0f-40ad-ab4e-0f808d2e77bd)
+![image](https://github.com/emptybraces/Unity_TransformInspector/assets/1441835/46d478bd-6377-48eb-8a22-9cae90f793f2)
+![image](https://github.com/emptybraces/Unity_TransformInspector/assets/1441835/0ca1b94c-685a-4a8b-bb2b-46aacd95af02)
 
 # Install
 Intall via Unity Package Manager:
@@ -24,3 +25,6 @@ Sample actions below are implemented:
 - Aligns the parent position with selected child transform without affecting the other children.
 - Randomize position(0-current), rotation(0-360), scale((0-current).
 - Grounding.
+
+![a](https://github.com/emptybraces/Unity_TransformInspector/assets/1441835/1addc94a-1c32-4500-b407-7e53563f5d53)
+![b](https://github.com/emptybraces/Unity_TransformInspector/assets/1441835/6fb9c531-e8e4-446a-9cbf-332299d31569)
