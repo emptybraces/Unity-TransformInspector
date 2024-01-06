@@ -58,8 +58,9 @@ namespace Emptybraces.Editor
 				for (int i = 0; i < 3; ++i)
 				{
 					EditorGUI.showMixedValue = _mixed[i];
+					using var scope2 = new EditorGUI.ChangeCheckScope();
 					var value = EditorGUILayout.FloatField(_XYZ[i], _target.position[i]);
-					if (GUI.changed)
+					if (scope2.changed)
 					{
 						Undo.RegisterCompleteObjectUndo(targets, $"Set Position in {(Selection.count == 1 ? target.name : "Selected Objects")}");
 						foreach (var j in _targets)
@@ -99,8 +100,9 @@ namespace Emptybraces.Editor
 				for (int i = 0; i < 3; ++i)
 				{
 					EditorGUI.showMixedValue = _mixed[i];
+					using var scope2 = new EditorGUI.ChangeCheckScope();
 					var value = EditorGUILayout.FloatField(_XYZ[i], _target.eulerAngles[i]);
-					if (GUI.changed)
+					if (scope2.changed)
 					{
 						Undo.RegisterCompleteObjectUndo(targets, $"Set Ratation in {(Selection.count == 1 ? target.name : "Selected Objects")}");
 						foreach (var j in _targets)
