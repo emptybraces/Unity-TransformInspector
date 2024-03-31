@@ -170,14 +170,19 @@ namespace Emptybraces.Editor
 				var value = EditorGUILayout.Toggle(hideFlags.ToString(), current);
 				if (scope.changed)
 				{
-					foreach (var i in _targets)
+					using (new UndoGroupScope("Change " + hideFlags))
 					{
-						Undo.RegisterCompleteObjectUndo(i.gameObject, "Change " + hideFlags);
-						if (value)
-							i.gameObject.hideFlags |= hideFlags;
-						else
-							i.gameObject.hideFlags &= ~hideFlags;
+						foreach (var i in _targets)
+						{
+							Undo.RegisterFullObjectHierarchyUndo(i, "");
+							if (value)
+								i.gameObject.hideFlags |= hideFlags;
+							else
+								i.gameObject.hideFlags &= ~hideFlags;
+						}
 					}
+					EditorApplication.RepaintHierarchyWindow();
+					EditorApplication.QueuePlayerLoopUpdate();
 				}
 			}
 		}
@@ -190,18 +195,25 @@ namespace Emptybraces.Editor
 				{
 					// 選択しているオブジェクトのHideFalgsリセット
 					("Reset HideFlags", () => {
-						foreach (var i in _targets)
+						using (new UndoGroupScope("Reset HideFlags"))
 						{
-							Undo.RegisterCompleteObjectUndo(i.gameObject, "Reset HideFlags");
-							i.gameObject.hideFlags = HideFlags.None;
+							foreach (var i in _targets)
+							{
+								Undo.RegisterFullObjectHierarchyUndo(i, "Reset HideFlags");
+								i.gameObject.hideFlags = HideFlags.None;
+							}
 						}
+						EditorApplication.RepaintHierarchyWindow();
 					}),
 					// 選択しているオブジェクトのスケールのプラス化
 					("Convert scale to positive", () => {
-						foreach (var i in _targets)
+						using (new UndoGroupScope("Convert scale to positive"))
 						{
-							Undo.RegisterCompleteObjectUndo(i, "Convert scale to positive");
-							i.localScale = new Vector3(Mathf.Abs(i.localScale.x), Mathf.Abs(i.localScale.y), Mathf.Abs(i.localScale.z));
+							foreach (var i in _targets)
+							{
+								Undo.RegisterFullObjectHierarchyUndo(i, "");
+								i.localScale = new Vector3(Mathf.Abs(i.localScale.x), Mathf.Abs(i.localScale.y), Mathf.Abs(i.localScale.z));
+							}
 						}
 					}),
 					// 選択しているオブジェクトの親トランスフォームのリセット（子はそのまま）
@@ -214,17 +226,17 @@ namespace Emptybraces.Editor
 							Debug.LogError("Reset transform and children stays: Abort, no Children.");
 							return;
 						}
-						var group_id = Undo.GetCurrentGroup();
-						var children = _GetChildren(_target);
-						foreach (var child in children)
-							Undo.SetTransformParent(child, null, "SetParent Null");
-						_target.position = Vector3.zero;
-						_target.rotation = Quaternion.identity;
-						_target.localScale = Vector3.one;
-						foreach (var child in children)
-							Undo.SetTransformParent(child, _target, "SetParent Target");
-						Undo.SetCurrentGroupName("Reset transform and children stays");
-						Undo.CollapseUndoOperations(group_id);
+						using (new UndoGroupScope("Reset transform and children stays"))
+						{
+							var children = _GetChildren(_target);
+							foreach (var child in children)
+								Undo.SetTransformParent(child, null, "SetParent Null");
+							_target.position = Vector3.zero;
+							_target.rotation = Quaternion.identity;
+							_target.localScale = Vector3.one;
+							foreach (var child in children)
+								Undo.SetTransformParent(child, _target, "SetParent Target");
+						}
 					}),
 					// 選択しているオブジェクトの子の中心位置へ移動
 					("Centering position based on children", () => {
@@ -236,14 +248,18 @@ namespace Emptybraces.Editor
 							Debug.LogError("Centering position based on children: Abort, no Children.");
 							return;
 						}
-						var children = _GetChildren(_target);
-						Undo.RecordObjects(children, "Centering position based on children");
-						Undo.RecordObject(_target , "Centering position based on children");
-						var cp = _GetCenterPosition(children);
-						var ofs = _target.position - cp;
-						_target.position = cp;
-						foreach (var child in children)
-							child.position = child.position + ofs;
+						using (new UndoGroupScope("Centering position based on children"))
+						{
+							var children = _GetChildren(_target);
+							Undo.RegisterFullObjectHierarchyUndo(_target , "");
+							var cp = _GetCenterPosition(children);
+							var ofs = _target.position - cp;
+							_target.position = cp;
+							foreach (var child in children) {
+								Undo.RegisterFullObjectHierarchyUndo(child, "");
+								child.position = child.position + ofs;
+							}
+						}
 					}),
 					// 選択しているオブジェクトの親の位置を同期
 					("Align parent position to this", () => {
@@ -251,16 +267,20 @@ namespace Emptybraces.Editor
 							Debug.LogError("Align parent position to this: Abort, no parent.");
 							return;
 						}
-						var parent = _target.parent;
-						var other_children = _GetChildren(parent).Where(e => e != _target).ToArray();
-						Undo.RecordObject(_target, "Align parent position to this");
-						Undo.RecordObject(parent, "Align parent position to this");
-						Undo.RecordObjects(other_children, "Align parent position to this");
-						var ofs = parent.position - _target.position;
-						parent.position = _target.position;
-						_target.localPosition = Vector3.zero;
-						foreach (var child in other_children)
-							child.position = child.position + ofs;
+						using (new UndoGroupScope("Align parent position to this"))
+						{
+							var parent = _target.parent;
+							var other_children = _GetChildren(parent).Where(e => e != _target).ToArray();
+							Undo.RegisterFullObjectHierarchyUndo(_target, "");
+							Undo.RegisterFullObjectHierarchyUndo(parent, "");
+							var ofs = parent.position - _target.position;
+							parent.position = _target.position;
+							_target.localPosition = Vector3.zero;
+							foreach (var child in other_children) {
+								Undo.RegisterFullObjectHierarchyUndo(child, "");
+								child.position = child.position + ofs;
+							}
+						}
 					}),
 					// ランダムセット
 					("Random Set/Position(Local)", () => {
@@ -294,10 +314,55 @@ namespace Emptybraces.Editor
 							child.localScale = new Vector3(Mathf.Abs(r.x), Mathf.Abs(r.y), Mathf.Abs(r.z));
 						}
 					}),
+					("Naming/Add suffix number", () => {
+						var regex = new Regex(@"\([0-9]+\)$");
+						int i = 1;
+						using (new UndoGroupScope("Naming/Add suffix number"))
+						{
+							foreach (var g in _targets.OrderBy(e => e.transform.GetSiblingIndex()))
+							{
+								Undo.RegisterFullObjectHierarchyUndo(g, "");
+								if (regex.IsMatch(g.name))
+									g.name = regex.Replace(g.name, $"({i++})");
+								else
+									g.name = g.name + $" ({i++})";
+							}
+						}
+					}),
+					("Naming/Rename top sibling obj name with suffix number", () => {
+						if (1 == _targets.Count) {
+							Debug.LogError("Cannot be done where only one is selected.");
+							return;
+						}
+						using (new UndoGroupScope("Naming/Rename top sibling obj name with suffix number"))
+						{
+							var ordered = _targets.OrderBy(e => e.transform.GetSiblingIndex()).ToArray();
+							var name = Regex.Replace(ordered[0].name, @"\([0-9]+\)$", "").TrimEnd();
+							int i = 1;
+							foreach (var g in ordered) {
+								Undo.RegisterFullObjectHierarchyUndo(g, "");
+								g.name = name + $" ({i++})";
+							}
+						}
+					})
 				};
 				_AddCustomAction();
 			}
 			_customActionNames ??= _customActions.Select(e => e.Item1).ToArray();
+		}
+
+		struct UndoGroupScope : IDisposable
+		{
+			int group;
+			public UndoGroupScope(string groupName)
+			{
+				Undo.SetCurrentGroupName(groupName);
+				group = Undo.GetCurrentGroup();
+			}
+			public void Dispose()
+			{
+				Undo.CollapseUndoOperations(group);
+			}
 		}
 
 		protected abstract void _AddCustomAction();
