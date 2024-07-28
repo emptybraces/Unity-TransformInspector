@@ -8,7 +8,7 @@ More things you can do with Transform Inspector.
 Intall via Unity Package Manager:
 
 ```
-https://github.com/emptybraces/Unity_TransformInspector.git?path=Assets/upm
+https://github.com/emptybraces/Unity-TransformInspector.git?path=Assets/upm
 ```
 
 # Custom Action
