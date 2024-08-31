@@ -1,5 +1,5 @@
 # Unity Transform Inspector
-More things you can do with Transform Inspector.
+Add various functions in Transform Inspector.
 
 ![image](https://github.com/emptybraces/Unity_TransformInspector/assets/1441835/46d478bd-6377-48eb-8a22-9cae90f793f2)
 ![image](https://github.com/emptybraces/Unity_TransformInspector/assets/1441835/0ca1b94c-685a-4a8b-bb2b-46aacd95af02)
