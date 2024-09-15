@@ -20,7 +20,47 @@ namespace Emptybraces.Editor
 		protected abstract string TypeName { get; }
 		static protected string[] _XYZ = new[] { "X", "Y", "Z" };
 		static protected bool[] _mixed = new bool[3];
+		protected static bool _isShow;
+		protected static bool _isShowDistanceOnSceneView;
+		protected virtual void OnSceneGUI()
+		{
+			if (!_isShowDistanceOnSceneView)
+				return;
+			var t = (Transform)target;
+			if (Selection.transforms[0] != t)
+				return;
+			if (5 < Selection.transforms.Length)
+				return;
+			var c = __Comb(Selection.transforms.Length, 2);
+			for (int i = 0, cnt = 0, l = Selection.transforms.Length; i < l; ++i)
+			{
+				var from = Selection.transforms[i];
+				for (int j = i + 1; j < l; ++j,++cnt)
+				{
+					Handles.color = GUI.color = Color.HSVToRGB(cnt / (float)c, 1, .8f);
+					var to = Selection.transforms[j];
+					Handles.DrawLine(from.position, to.position);
+					Handles.Label((to.position + from.position) / 2, Vector3.Distance(to.position, from.position).ToString());
+				}
+			}
 
+			int __Perm(int n, int p)
+			{
+				var r = n;
+				--n;
+				--p;
+				for (; 1 < n && 0 < p; --n, --p)
+					r *= n;
+				return r;
+			}
+			int __Comb(int n, int c)
+			{
+				var d = __Perm(c, c);
+				if (d != 0)
+					return __Perm(n, c) / d;
+				return 0;
+			}
+		}
 		void Awake()
 		{
 			_InitIfNeeded();
@@ -35,6 +75,82 @@ namespace Emptybraces.Editor
 		{
 			_originalEditorType.GetMethod("OnDisable", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public)?.Invoke(_originalEditor, null);
 			DestroyImmediate(_originalEditor);
+		}
+
+		public override void OnInspectorGUI()
+		{
+			_originalEditor.OnInspectorGUI();
+
+			serializedObject.Update();
+
+			_target = (T)target;
+			_targets.Clear();
+			for (int i = 0; i < targets.Length; ++i)
+				_targets.Add((T)targets[i]);
+			for (int i = 0; i < 3; ++i)
+				_mixed[i] = false;
+
+			// worlds
+			_OnGUIWorldPosition();
+			_OnGUIWorldEulerAngles();
+			_OnGUILossyScale();
+			// distance
+			if (Selection.transforms.Length == 2)
+			{
+				GUI.enabled = false;
+				using (var scope = new EditorGUILayout.HorizontalScope())
+				{
+					EditorGUILayout.PrefixLabel("Distance");
+					EditorGUIUtility.labelWidth = 22;
+					EditorGUILayout.FloatField("", Vector3.Distance(Selection.transforms[1].position, Selection.transforms[0].position));
+					EditorGUILayout.FloatField("Sqr", Vector3.SqrMagnitude(Selection.transforms[1].position - Selection.transforms[0].position));
+				}
+			}
+			// options;
+			GUI.enabled = true;
+			_isShow = EditorGUILayout.BeginFoldoutHeaderGroup(_isShow, "options");
+			if (!_isShow)
+				return;
+			// HideFlags.HideInHierarchy
+			GUI.enabled = 1 == _targets.Count && 0 < _target.childCount;
+			var current = false;
+			if (GUI.enabled)
+			{
+				foreach (Transform child in _target)
+				{
+					current = child.gameObject.hideFlags.HasFlag(HideFlags.HideInHierarchy);
+					if (current)
+						break;
+				}
+			}
+			using (var scope = new EditorGUI.ChangeCheckScope())
+			{
+				var value = EditorGUILayout.Toggle("HideInHierarchy children", current);
+				if (scope.changed)
+				{
+					foreach (Transform child in _target)
+					{
+						Undo.RegisterCompleteObjectUndo(child.gameObject, "Update GameObject HideFlags");
+						if (value)
+							child.gameObject.hideFlags |= HideFlags.HideInHierarchy;
+						else
+							child.gameObject.hideFlags &= ~HideFlags.HideInHierarchy;
+					}
+					EditorApplication.DirtyHierarchyWindowSorting();
+				}
+			}
+			// HideFlags.DontSaveInBuild
+			_OnGUIHideFlags(HideFlags.DontSaveInBuild);
+			// HideFlags.NotEditable
+			_OnGUIHideFlags(HideFlags.NotEditable);
+			// distsance on sceneview
+			_isShowDistanceOnSceneView = EditorGUILayout.Toggle("Show Distance on SceneView", _isShowDistanceOnSceneView);
+			// custom actions
+			var selected = EditorGUILayout.Popup("Custom Action", -1, _customActionNames);
+			if (-1 < selected)
+			{
+				_customActions[selected].Item2();
+			}
 		}
 
 		void _InitIfNeeded()
@@ -365,7 +481,10 @@ namespace Emptybraces.Editor
 			}
 		}
 
-		protected abstract void _AddCustomAction();
+		protected virtual void _AddCustomAction()
+		{
+
+		}
 
 		protected Transform[] _GetChildren(Transform parent)
 		{
