@@ -1,5 +1,5 @@
 # Unity Transform Inspector
-Add various functions in Transform Inspector.
+Adding various functions to the Transform Inspector.
 
 ![image](https://github.com/emptybraces/Unity_TransformInspector/assets/1441835/46d478bd-6377-48eb-8a22-9cae90f793f2)
 ![image](https://github.com/emptybraces/Unity_TransformInspector/assets/1441835/0ca1b94c-685a-4a8b-bb2b-46aacd95af02)
@@ -10,6 +10,10 @@ Intall via Unity Package Manager:
 ```
 https://github.com/emptybraces/Unity-TransformInspector.git?path=Assets/upm
 ```
+# SceneGUI
+Showing distance between the selected objects.
+
+![image](https://github.com/user-attachments/assets/9ee9dd62-accc-4e2b-b637-9e0f59e7d033)
 
 # Custom Action
 There is a button to execute a custom action.
