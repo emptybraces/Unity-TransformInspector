@@ -9,6 +9,12 @@ using System.Reflection;
 
 namespace Emptybraces.Editor
 {
+	class LabelWidthChangedScope : GUI.Scope
+	{
+		float defaultValue;
+		public LabelWidthChangedScope() => defaultValue = EditorGUIUtility.labelWidth;
+		protected override void CloseScope() => EditorGUIUtility.labelWidth = defaultValue;
+	}
 	public abstract class TransformInspectorBase<T> : UnityEditor.Editor where T : Transform
 	{
 		protected UnityEditor.Editor _originalEditor;
@@ -35,7 +41,7 @@ namespace Emptybraces.Editor
 			for (int i = 0, cnt = 0, l = Selection.transforms.Length; i < l; ++i)
 			{
 				var from = Selection.transforms[i];
-				for (int j = i + 1; j < l; ++j,++cnt)
+				for (int j = i + 1; j < l; ++j, ++cnt)
 				{
 					Handles.color = GUI.color = Color.HSVToRGB(cnt / (float)c, 1, .8f);
 					var to = Selection.transforms[j];
@@ -100,6 +106,7 @@ namespace Emptybraces.Editor
 				GUI.enabled = false;
 				using (var scope = new EditorGUILayout.HorizontalScope())
 				{
+					using var width_scope = new LabelWidthChangedScope();
 					EditorGUILayout.PrefixLabel("Distance");
 					EditorGUIUtility.labelWidth = 22;
 					EditorGUILayout.FloatField("", Vector3.Distance(Selection.transforms[1].position, Selection.transforms[0].position));
@@ -163,7 +170,7 @@ namespace Emptybraces.Editor
 
 		protected void _OnGUIWorldPosition()
 		{
-			var width_default = EditorGUIUtility.labelWidth;
+			using var width_scope = new LabelWidthChangedScope();
 			foreach (var i in _targets)
 				for (int j = 0; j < 3; ++j)
 					_mixed[j] |= !Mathf.Approximately(i.position[j], _target.position[j]);
@@ -199,12 +206,11 @@ namespace Emptybraces.Editor
 				}
 			}
 			EditorGUI.showMixedValue = false;
-			EditorGUIUtility.labelWidth = width_default;
 		}
 
 		protected void _OnGUIWorldEulerAngles()
 		{
-			var width_default = EditorGUIUtility.labelWidth;
+			using var width_scope = new LabelWidthChangedScope();
 			foreach (var i in _targets)
 				for (int j = 0; j < 3; ++j)
 					_mixed[j] |= !Mathf.Approximately(i.eulerAngles[j], _target.eulerAngles[j]);
@@ -241,12 +247,11 @@ namespace Emptybraces.Editor
 				}
 			}
 			EditorGUI.showMixedValue = false;
-			EditorGUIUtility.labelWidth = width_default;
 		}
 
 		protected void _OnGUILossyScale()
 		{
-			var width_default = EditorGUIUtility.labelWidth;
+			using var width_scope = new LabelWidthChangedScope();
 			foreach (var i in _targets)
 				for (int j = 0; j < 3; ++j)
 					_mixed[j] |= !Mathf.Approximately(i.lossyScale[j], _target.lossyScale[j]);
@@ -271,7 +276,6 @@ namespace Emptybraces.Editor
 				}
 			}
 			EditorGUI.showMixedValue = false;
-			EditorGUIUtility.labelWidth = width_default;
 		}
 
 		protected void _OnGUIHideFlags(HideFlags hideFlags)
